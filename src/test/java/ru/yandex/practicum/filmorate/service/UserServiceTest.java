@@ -17,46 +17,23 @@ class UserServiceTest {
     // тест updateUser()
     @Test
     public void shouldThrowValidationExceptionIfUserIdIsWrong() {
-        User user2 = new User("user2 mail.ru", "user2", LocalDate.of(1991, 6, 28));
-        user2.setId(5);
+        User user2 = User.builder()
+                .id(5)
+                .email("user2@mail.ru")
+                .login("user2")
+                .birthday(LocalDate.of(1991, 6, 28))
+                .build();
         Assertions.assertThrows(ValidationException.class, () -> userService.updateUser(user2));
     }
 
-    // тесты checkUser()
-    @Test
-    public void shouldThrowValidationExceptionIfEmailIsWrong() {
-        User user2 = new User("user2 mail.ru", "user2", LocalDate.of(1991, 6, 28));
-        Assertions.assertThrows(ValidationException.class, () -> userService.createUser(user2));
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionIfEmailIsBlank() {
-        User user2 = new User(" ", "user2", LocalDate.of(1991, 6, 28));
-        Assertions.assertThrows(ValidationException.class, () -> userService.createUser(user2));
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionIfLoginIsBlank() {
-        User user2 = new User("user2@mail.ru", "", LocalDate.of(1991, 6, 28));
-        Assertions.assertThrows(ValidationException.class, () -> userService.createUser(user2));
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionIfLoginContainsWhitespace() {
-        User user2 = new User("user2@mail.ru", "user 2", LocalDate.of(1991, 6, 28));
-        Assertions.assertThrows(ValidationException.class, () -> userService.createUser(user2));
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionIfBirthdayInFuture() {
-        User user2 = new User("user2@mail.ru", "user2", LocalDate.of(2991, 6, 28));
-        Assertions.assertThrows(ValidationException.class, () -> userService.createUser(user2));
-    }
-
+    // тесты checkUserName()
     @Test
     public void shouldSetNameIfItIsEmptyUsingLoginInfo() {
-        User user2 = new User("user2@mail.ru", "user2", LocalDate.of(1991, 6, 28));
-        user2.setName("");
+        User user2 = User.builder()
+                .email("user2@mail.ru")
+                .login("user2")
+                .birthday(LocalDate.of(1991, 6, 28))
+                .build();
         userService.createUser(user2);
         Assertions.assertEquals("user2", user2.getName());
     }

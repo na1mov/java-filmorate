@@ -5,11 +5,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class FilmServiceTest {
     private static FilmService filmService;
@@ -22,40 +19,13 @@ class FilmServiceTest {
     // тест update()
     @Test
     public void shouldThrowValidationExceptionIfUserIdIsWrong() {
-        Film film = new Film("FilmName", "Description",
-                LocalDate.of(1999, 9, 9), 99);
-        film.setId(5);
+        Film film = Film.builder()
+                .id(5)
+                .name("FilmName")
+                .description("Description")
+                .releaseDate(LocalDate.of(1999, 9, 9))
+                .duration(99)
+                .build();
         Assertions.assertThrows(ValidationException.class, () -> filmService.update(film));
-    }
-
-    // тесты checkFilm()
-    @Test
-    public void shouldThrowValidationExceptionIfNameIsBlank() {
-        Film film = new Film("", "Description",
-                LocalDate.of(1999, 9, 9), 99);
-        Assertions.assertThrows(ValidationException.class, () -> filmService.create(film));
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionIfDescriptionSizeIsMoreThan200() {
-        Film film = new Film("FilmName", "Description size should not be more than 200 symbols. " +
-                "This message contains 101 symbols. And doubled. Description size should not be more than " +
-                "200 symbols. This message contains 101 symbols. And doubled.",
-                LocalDate.of(1999, 9, 9), 99);
-        Assertions.assertThrows(ValidationException.class, () -> filmService.create(film));
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionIfReleaseDateIsBefore1895() {
-        Film film = new Film("FilmName", "Description",
-                LocalDate.of(1555, 5, 5), 55);
-        Assertions.assertThrows(ValidationException.class, () -> filmService.create(film));
-    }
-
-    @Test
-    public void shouldThrowValidationExceptionIfFilmDurationIsNegative() {
-        Film film = new Film("FilmName", "Description",
-                LocalDate.of(1999, 9, 9), -1);
-        Assertions.assertThrows(ValidationException.class, () -> filmService.create(film));
     }
 }

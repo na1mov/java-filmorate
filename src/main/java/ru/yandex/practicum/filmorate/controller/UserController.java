@@ -22,7 +22,7 @@ public class UserController {
 
     @GetMapping
     public Collection<User> findAll() {
-        log.info("Получен GET запрос к эндпоинту /users на получаение всех пользователей.");
+        log.info("Получен GET запрос к эндпоинту /users на получение всех пользователей.");
         return userService.getUsers();
     }
 

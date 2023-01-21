@@ -1,23 +1,23 @@
 package ru.yandex.practicum.filmorate.model;
 
+import lombok.Builder;
 import lombok.Data;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Past;
-import javax.validation.constraints.Pattern;
+import javax.validation.constraints.*;
 import java.time.LocalDate;
 
 @Data
+@Builder
 public class User {
-    private int id;
+    private Integer id;
     @Email
     @NotBlank
-    private final String email;
+    private String email;
     @NotBlank
     @Pattern(regexp = "\\S*$")
-    private final String login;
+    private String login;
     private String name;
+    @NotNull
     @Past
-    private final LocalDate birthday;
+    private LocalDate birthday;
 }
