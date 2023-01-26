@@ -1,8 +1,7 @@
 package ru.yandex.practicum.filmorate.storage;
 
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
-import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.*;
@@ -15,7 +14,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public Film getFilm(Integer filmId) {
         if (!films.containsKey(filmId)) {
-            throw new UserNotFoundException(String.format("Пользователя с ID:%d нет в базе.", filmId));
+            throw new ValidationException(String.format("Пользователя с ID:%d нет в базе.", filmId));
         }
         return films.get(filmId);
     }
@@ -35,7 +34,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public Film update(Film film) {
         if (!films.containsKey(film.getId())) {
-            throw new FilmNotFoundException(String.format("Фильма с ID:%d нет в базе.", film.getId()));
+            throw new ValidationException(String.format("Фильма с ID:%d нет в базе.", film.getId()));
         }
         films.put(film.getId(), film);
         return film;
