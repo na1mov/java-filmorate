@@ -2,7 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
@@ -22,9 +22,7 @@ public class FilmService {
     }
 
     public Film update(Film film) {
-        Film updFilm = filmStorage.update(film);
-        filmNullCheck(updFilm, film.getId());
-        return updFilm;
+        return filmStorage.update(film);
     }
 
     public Film delete(Integer filmId) {
@@ -32,9 +30,7 @@ public class FilmService {
     }
 
     public Film getFilm(Integer filmId) {
-        Film film = filmStorage.getFilm(filmId);
-        filmNullCheck(film, filmId);
-        return film;
+        return filmStorage.getFilm(filmId);
     }
 
     public Collection<Film> getFilms() {
@@ -43,7 +39,6 @@ public class FilmService {
 
     public Film addLike(Integer filmId, Integer userId) {
         Film film = filmStorage.getFilm(filmId);
-        filmNullCheck(film, filmId);
         if (film.getLikes() == null) {
             film.setLikes(new HashSet<>());
         }
@@ -53,9 +48,8 @@ public class FilmService {
 
     public Film removeLike(Integer filmId, Integer userId) {
         Film film = filmStorage.getFilm(filmId);
-        filmNullCheck(film, filmId);
         if (film.getLikes() == null) {
-            throw new NotFoundException(String.format("У фильма с ID:%d нет лайков", filmId));
+            throw new ValidationException(String.format("У фильма с ID:%d нет лайков", filmId));
         }
         film.getLikes().remove(userId);
         return film;
@@ -83,11 +77,5 @@ public class FilmService {
             return -1;
         }
         return f1.getLikes().size() - f0.getLikes().size();
-    }
-
-    private void filmNullCheck(Film film, Integer filmId) {
-        if (film == null) {
-            throw new NotFoundException(String.format("Фильма с ID:%d нет в базе.", filmId));
-        }
     }
 }
