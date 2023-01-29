@@ -2,7 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -63,7 +63,7 @@ public class UserService {
 
         Set<Integer> userFriends = user.getFriends();
         if (userFriends == null || userFriends.isEmpty()) {
-            throw new NotFoundException(String.format("У пользователя с ID:%d нет друзей", userId));
+            throw new ValidationException(String.format("У пользователя с ID:%d нет друзей", userId));
         }
 
         userFriends.remove(friendId);
@@ -109,7 +109,7 @@ public class UserService {
 
     private void userNullCheck(User user, Integer userId) {
         if (user == null) {
-            throw new NotFoundException(String.format("Пользователя с ID:%d нет в базе.", userId));
+            throw new ValidationException(String.format("Пользователя с ID:%d нет в базе.", userId));
         }
     }
 }

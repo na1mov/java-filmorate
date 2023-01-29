@@ -3,7 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.exception.IncorrectParameterException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 
@@ -27,6 +27,6 @@ class InMemoryFilmStorageTest {
                 .releaseDate(LocalDate.of(1999, 9, 9))
                 .duration(99)
                 .build();
-        Assertions.assertThrows(ValidationException.class, () -> inMemoryFilmStorage.update(film));
+        Assertions.assertThrows(IncorrectParameterException.class, () -> inMemoryFilmStorage.update(film));
     }
 }
