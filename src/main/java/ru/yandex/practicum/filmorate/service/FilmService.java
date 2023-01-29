@@ -1,8 +1,8 @@
 package ru.yandex.practicum.filmorate.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
@@ -13,32 +13,37 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class FilmService {
     private final FilmStorage filmStorage;
-
-    @Autowired
-    public FilmService(FilmStorage filmStorage) {
-        this.filmStorage = filmStorage;
-    }
-
-    public Film getFilm(Integer filmId) {
-        return filmStorage.getFilm(filmId);
-    }
-
-    public Collection<Film> getFilms() {
-        return filmStorage.getFilms();
-    }
 
     public Film create(Film film) {
         return filmStorage.create(film);
     }
 
     public Film update(Film film) {
-        return filmStorage.update(film);
+        Film updFilm = filmStorage.update(film);
+        filmNullCheck(updFilm, film.getId());
+        return updFilm;
+    }
+
+    public Film delete(Integer filmId) {
+        return filmStorage.delete(filmId);
+    }
+
+    public Film getFilm(Integer filmId) {
+        Film film = filmStorage.getFilm(filmId);
+        filmNullCheck(film, filmId);
+        return film;
+    }
+
+    public Collection<Film> getFilms() {
+        return filmStorage.getFilms();
     }
 
     public Film addLike(Integer filmId, Integer userId) {
         Film film = filmStorage.getFilm(filmId);
+        filmNullCheck(film, filmId);
         if (film.getLikes() == null) {
             film.setLikes(new HashSet<>());
         }
@@ -48,15 +53,17 @@ public class FilmService {
 
     public Film removeLike(Integer filmId, Integer userId) {
         Film film = filmStorage.getFilm(filmId);
+        filmNullCheck(film, filmId);
         if (film.getLikes() == null) {
-            throw new ValidationException(String.format("У фильма с ID:%d нет лайков", filmId));
+            throw new NotFoundException(String.format("У фильма с ID:%d нет лайков", filmId));
         }
         film.getLikes().remove(userId);
         return film;
     }
 
     public List<Film> getPopularFilms(Integer count) {
-        if (filmStorage.getFilms() == null || filmStorage.getFilms().isEmpty()) {
+        Collection<Film> films = filmStorage.getFilms();
+        if (films == null || films.isEmpty()) {
             return new ArrayList<>();
         }
         return filmStorage.getFilms().stream()
@@ -76,5 +83,11 @@ public class FilmService {
             return -1;
         }
         return f1.getLikes().size() - f0.getLikes().size();
+    }
+
+    private void filmNullCheck(Film film, Integer filmId) {
+        if (film == null) {
+            throw new NotFoundException(String.format("Фильма с ID:%d нет в базе.", filmId));
+        }
     }
 }

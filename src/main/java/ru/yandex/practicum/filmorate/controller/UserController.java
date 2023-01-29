@@ -21,12 +21,6 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping
-    public Collection<User> getUsers() {
-        log.info("Получен GET запрос к эндпоинту /users на получение всех пользователей.");
-        return userService.getUsers();
-    }
-
     @PostMapping
     public User create(@Valid @RequestBody User user) {
         log.info("Получен POST запрос к эндпоинту /users на добавление нового пользователя.");
@@ -39,9 +33,20 @@ public class UserController {
         return userService.update(user);
     }
 
+    @DeleteMapping("/{id}")
+    public User delete(@PathVariable("id") Integer userId) {
+        return userService.delete(userId);
+    }
+
     @GetMapping("/{id}")
     public User getUser(@PathVariable("id") Integer userId) {
         return userService.getUser(userId);
+    }
+
+    @GetMapping
+    public Collection<User> getUsers() {
+        log.info("Получен GET запрос к эндпоинту /users на получение всех пользователей.");
+        return userService.getUsers();
     }
 
     @PutMapping("/{id}/friends/{friendId}")

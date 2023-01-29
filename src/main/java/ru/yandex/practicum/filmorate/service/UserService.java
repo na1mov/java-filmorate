@@ -1,45 +1,49 @@
 package ru.yandex.practicum.filmorate.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
     private final UserStorage userStorage;
-
-    @Autowired
-    public UserService(UserStorage userStorage) {
-        this.userStorage = userStorage;
-    }
-
-    public User getUser(Integer userId) {
-        return userStorage.getUser(userId);
-    }
-
-    public Collection<User> getUsers() {
-        return userStorage.getUsers();
-    }
 
     public User create(User user) {
         return userStorage.create(user);
     }
 
     public User update(User user) {
-        return userStorage.update(user);
+        User updUser = userStorage.update(user);
+        userNullCheck(updUser, user.getId());
+        return updUser;
+    }
+
+    public User delete(Integer userId) {
+        return userStorage.delete(userId);
+    }
+
+    public User getUser(Integer userId) {
+        User user = userStorage.getUser(userId);
+        userNullCheck(user, userId);
+        return user;
+    }
+
+    public Collection<User> getUsers() {
+        return userStorage.getUsers();
     }
 
     public User addFriend(Integer userId, Integer friendId) {
         User user = userStorage.getUser(userId);
+        userNullCheck(user, userId);
         User friend = userStorage.getUser(friendId);
+        userNullCheck(friend, friendId);
+
         if (user.getFriends() == null) {
             user.setFriends(new HashSet<>());
         }
@@ -53,37 +57,59 @@ public class UserService {
 
     public User deleteFriend(Integer userId, Integer friendId) {
         User user = userStorage.getUser(userId);
+        userNullCheck(user, userId);
         User friend = userStorage.getUser(friendId);
-        if (user.getFriends() == null || user.getFriends().isEmpty()) {
-            throw new ValidationException(String.format("У пользователя с ID:%d нет друзей", userId));
+        userNullCheck(friend, friendId);
+
+        Set<Integer> userFriends = user.getFriends();
+        if (userFriends == null || userFriends.isEmpty()) {
+            throw new NotFoundException(String.format("У пользователя с ID:%d нет друзей", userId));
         }
-        user.getFriends().remove(friendId);
+
+        userFriends.remove(friendId);
         friend.getFriends().remove(userId);
         return user;
     }
 
     public List<User> getFriends(Integer userId) {
         User user = userStorage.getUser(userId);
-        if (user.getFriends() == null || user.getFriends().isEmpty()) {
+        userNullCheck(user, userId);
+
+        Set<Integer> userFriends = user.getFriends();
+        if (userFriends == null || userFriends.isEmpty()) {
             return new ArrayList<>();
         }
-        return user.getFriends().stream()
+
+        return userFriends.stream()
                 .map(this::getUser)
                 .collect(Collectors.toList());
     }
 
     public List<User> getCommonFriends(Integer userId, Integer otherUserId) {
         User user = userStorage.getUser(userId);
+        userNullCheck(user, userId);
         User otherUser = userStorage.getUser(otherUserId);
-        if (user.getFriends() == null || user.getFriends().isEmpty()) {
+        userNullCheck(otherUser, otherUserId);
+
+        Set<Integer> userFriends = user.getFriends();
+        if (userFriends == null || userFriends.isEmpty()) {
             return new ArrayList<>();
         }
-        if (otherUser.getFriends() == null || otherUser.getFriends().isEmpty()) {
+
+        Set<Integer> otherUserFriends = otherUser.getFriends();
+        if (otherUserFriends == null || otherUserFriends.isEmpty()) {
             return new ArrayList<>();
         }
-        return user.getFriends().stream()
-                .filter(i -> otherUser.getFriends().contains(i))
+
+        return userFriends.stream()
+                .filter(otherUserFriends::contains)
                 .map(userStorage::getUser)
                 .collect(Collectors.toList());
+    }
+
+    private void userNullCheck(User user, Integer userId) {
+        if (user == null) {
+            throw new NotFoundException(String.format("Пользователя с ID:%d нет в базе.", userId));
+        }
     }
 }
