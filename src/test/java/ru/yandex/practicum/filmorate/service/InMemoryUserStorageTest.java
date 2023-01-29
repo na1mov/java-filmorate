@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.junit.jupiter.api.*;
-import ru.yandex.practicum.filmorate.exception.IncorrectParameterException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
@@ -24,7 +24,7 @@ class InMemoryUserStorageTest {
                 .login("user2")
                 .birthday(LocalDate.of(1991, 6, 28))
                 .build();
-        Assertions.assertThrows(IncorrectParameterException.class, () -> inMemoryUserStorage.update(user2));
+        Assertions.assertThrows(ValidationException.class, () -> inMemoryUserStorage.update(user2));
     }
 
     // тесты checkUserName()
