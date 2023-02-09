@@ -1,33 +1,81 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class FilmService {
-    private final Map<Integer, Film> films = new HashMap<>();
-    private int filmId = 1;
-
-    public Collection<Film> getFilms() {
-        return films.values();
-    }
+    private final FilmStorage filmStorage;
 
     public Film create(Film film) {
-        film.setId(filmId++);
-        films.put(film.getId(), film);
-        return film;
+        return filmStorage.create(film);
     }
 
     public Film update(Film film) {
-        if (!films.containsKey(film.getId())) {
-            throw new ValidationException(String.format("Фильма с ID:%d нет в базе.", film.getId()));
+        return filmStorage.update(film);
+    }
+
+    public Film delete(Integer filmId) {
+        return filmStorage.delete(filmId);
+    }
+
+    public Film getFilm(Integer filmId) {
+        return filmStorage.getFilm(filmId);
+    }
+
+    public Collection<Film> getFilms() {
+        return filmStorage.getFilms();
+    }
+
+    public Film addLike(Integer filmId, Integer userId) {
+        Film film = filmStorage.getFilm(filmId);
+        if (film.getLikes() == null) {
+            film.setLikes(new HashSet<>());
         }
-        films.put(film.getId(), film);
+        film.getLikes().add(userId);
         return film;
+    }
+
+    public Film removeLike(Integer filmId, Integer userId) {
+        Film film = filmStorage.getFilm(filmId);
+        if (film.getLikes() == null) {
+            throw new ValidationException(String.format("У фильма с ID:%d нет лайков", filmId));
+        }
+        film.getLikes().remove(userId);
+        return film;
+    }
+
+    public List<Film> getPopularFilms(Integer count) {
+        Collection<Film> films = filmStorage.getFilms();
+        if (films == null || films.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return filmStorage.getFilms().stream()
+                .sorted(this::compare)
+                .limit(count)
+                .collect(Collectors.toList());
+    }
+
+    private int compare(Film f0, Film f1) {
+        if (f0.getLikes() == null || f0.getLikes().isEmpty()) {
+            if (f1.getLikes() == null || f1.getLikes().isEmpty()) {
+                return 0;
+            }
+            return 1;
+        }
+        if (f1.getLikes() == null || f1.getLikes().isEmpty()) {
+            return -1;
+        }
+        return f1.getLikes().size() - f0.getLikes().size();
     }
 }

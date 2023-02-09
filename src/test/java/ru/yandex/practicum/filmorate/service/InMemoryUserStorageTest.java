@@ -3,15 +3,16 @@ package ru.yandex.practicum.filmorate.service;
 import org.junit.jupiter.api.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.time.LocalDate;
 
-class UserServiceTest {
-    private static UserService userService;
+class InMemoryUserStorageTest {
+    private static InMemoryUserStorage inMemoryUserStorage;
 
     @BeforeEach
     public void beforeEach() {
-        userService = new UserService();
+        inMemoryUserStorage = new InMemoryUserStorage();
     }
 
     // тест updateUser()
@@ -23,7 +24,7 @@ class UserServiceTest {
                 .login("user2")
                 .birthday(LocalDate.of(1991, 6, 28))
                 .build();
-        Assertions.assertThrows(ValidationException.class, () -> userService.updateUser(user2));
+        Assertions.assertThrows(ValidationException.class, () -> inMemoryUserStorage.update(user2));
     }
 
     // тесты checkUserName()
@@ -34,7 +35,7 @@ class UserServiceTest {
                 .login("user2")
                 .birthday(LocalDate.of(1991, 6, 28))
                 .build();
-        userService.createUser(user2);
+        inMemoryUserStorage.create(user2);
         Assertions.assertEquals("user2", user2.getName());
     }
 }
