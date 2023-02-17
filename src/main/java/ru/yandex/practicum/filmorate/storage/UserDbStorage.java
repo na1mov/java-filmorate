@@ -1,0 +1,141 @@
+package ru.yandex.practicum.filmorate.storage;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Primary;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.User;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Component
+@Primary
+@RequiredArgsConstructor
+public class UserDbStorage implements UserStorage {
+    private final JdbcTemplate jdbcTemplate;
+
+    @Override
+    public User create(User user) {
+        checkUserName(user);
+
+        SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
+                .withTableName("users")
+                .usingGeneratedKeyColumns("user_id");
+
+        user.setId(simpleJdbcInsert.executeAndReturnKey(userToMap(user)).intValue());
+        return user;
+    }
+
+    @Override
+    public User update(User user) {
+        checkUserName(user);
+        String sqlQuery = "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? WHERE user_id = ?";
+        int result = jdbcTemplate.update(sqlQuery
+                , user.getEmail()
+                , user.getLogin()
+                , user.getName()
+                , user.getBirthday()
+                , user.getId());
+        if (result > 0) {
+            return user;
+        } else {
+            throw new NotFoundException(String.format("Пользователя с ID:%d нет в базе.", user.getId()));
+        }
+    }
+
+    @Override
+    public User delete(Integer userId) {
+        User user = getUser(userId);
+        String sqlQuery = "DELETE FROM users WHERE user_id = ?";
+        if (jdbcTemplate.update(sqlQuery, userId) > 0) {
+            return user;
+        } else {
+            throw new NotFoundException(String.format("Пользователя с ID:%d нет в базе.", userId));
+        }
+    }
+
+    @Override
+    public User getUser(Integer userId) {
+        String sqlQuery = "SELECT * FROM users WHERE user_id = ?";
+        try {
+            return jdbcTemplate.queryForObject(sqlQuery, this::mapRowToUser, userId);
+        } catch (Exception e) {
+            throw new NotFoundException(String.format("Пользователя с ID:%d нет в базе.", userId));
+        }
+    }
+
+    @Override
+    public Collection<User> getUsers() {
+        String sqlQuery = "SELECT * FROM users";
+        return jdbcTemplate.query(sqlQuery, this::mapRowToUser);
+    }
+
+    @Override
+    public User addFriend(Integer userId, Integer friendId) {
+        if (userId <= 0 || friendId <= 0) {
+            throw new NotFoundException("Пользователя нет в базе.");
+        }
+        String sqlQuery = "INSERT INTO friendship (user_id, friend_id) VALUES(?, ?)";
+        jdbcTemplate.update(sqlQuery, userId, friendId);
+        return getUser(userId);
+    }
+
+    @Override
+    public User deleteFriend(Integer userId, Integer friendId) {
+        String sqlQuery = "DELETE FROM friendship WHERE user_id = ? AND friend_id = ?";
+        if (jdbcTemplate.update(sqlQuery, userId, friendId) > 0) {
+            return getUser(userId);
+        } else {
+            throw new NotFoundException(String.format("Пользователя с ID:%d нет в базе.", userId));
+        }
+    }
+
+    @Override
+    public List<User> getFriends(Integer userId) {
+        String sqlQuery = "SELECT * FROM users WHERE user_id IN(SELECT friend_id FROM friendship WHERE user_id = ?)";
+        return jdbcTemplate.query(sqlQuery, this::mapRowToUser, userId);
+    }
+
+    @Override
+    public List<User> getCommonFriends(Integer userId, Integer otherUserId) {
+        String sqlQuery = "SELECT * FROM users WHERE user_id IN(" +
+                "SELECT friend_id FROM friendship WHERE user_id = ?) AND user_id IN(" +
+                "SELECT friend_id FROM friendship WHERE user_id = ?)";
+        return jdbcTemplate.query(sqlQuery, this::mapRowToUser, userId, otherUserId);
+    }
+
+    private Map<String, Object> userToMap(User user) {
+        Map<String, Object> values = new HashMap<>();
+        values.put("email", user.getEmail());
+        values.put("login", user.getLogin());
+        values.put("name", user.getName());
+        values.put("birthday", user.getBirthday());
+        return values;
+    }
+
+    private User mapRowToUser(ResultSet resultSet, int rowNum) throws SQLException {
+        User user = User.builder()
+                .id(resultSet.getInt("user_id"))
+                .email(resultSet.getString("email"))
+                .login(resultSet.getString("login"))
+                .name(resultSet.getString("name"))
+                .birthday(resultSet.getDate("birthday").toLocalDate())
+                .build();
+        user.setFriends(getFriends(user.getId()).stream().map(User::getId).collect(Collectors.toSet()));
+        return user;
+    }
+
+    private void checkUserName(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
+    }
+}

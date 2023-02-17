@@ -25,4 +25,6 @@ public class Film {
     @Positive
     private Integer duration;
     private Set<Integer> likes;
+    private MpaRating mpa;
+    private Set<Genre> genres;
 }

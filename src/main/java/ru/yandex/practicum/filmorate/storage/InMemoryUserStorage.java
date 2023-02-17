@@ -1,15 +1,16 @@
 package ru.yandex.practicum.filmorate.storage;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.IncorrectParameterException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
+@Qualifier("inMemoryUserStorage")
 public class InMemoryUserStorage implements UserStorage {
     private final Map<Integer, User> users = new HashMap<>();
     private int userId = 1;
@@ -46,6 +47,67 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public Collection<User> getUsers() {
         return users.values();
+    }
+
+    @Override
+    public User addFriend(Integer userId, Integer friendId) {
+        User user = getUser(userId);
+        User friend = getUser(friendId);
+
+        if (user.getFriends() == null) {
+            user.setFriends(new HashSet<>());
+        }
+        if (friend.getFriends() == null) {
+            friend.setFriends(new HashSet<>());
+        }
+        user.getFriends().add(friendId);
+        friend.getFriends().add(userId);
+        return user;
+    }
+
+    @Override
+    public User deleteFriend(Integer userId, Integer friendId) {
+        User user = getUser(userId);
+        User friend = getUser(friendId);
+
+        Set<Integer> userFriends = user.getFriends();
+        if (userFriends == null || userFriends.isEmpty()) {
+            throw new IncorrectParameterException(String.format("У пользователя с ID:%d нет друзей", userId));
+        }
+
+        userFriends.remove(friendId);
+        friend.getFriends().remove(userId);
+        return user;
+    }
+
+    @Override
+    public List<User> getFriends(Integer userId) {
+        Set<Integer> userFriends = getUser(userId).getFriends();
+        if (userFriends == null || userFriends.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return userFriends.stream()
+                .map(this::getUser)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<User> getCommonFriends(Integer userId, Integer otherUserId) {
+        Set<Integer> userFriends = getUser(userId).getFriends();
+        if (userFriends == null || userFriends.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        Set<Integer> otherUserFriends = getUser(otherUserId).getFriends();
+        if (otherUserFriends == null || otherUserFriends.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return userFriends.stream()
+                .filter(otherUserFriends::contains)
+                .map(this::getUser)
+                .collect(Collectors.toList());
     }
 
     private void checkUserName(User user) {
