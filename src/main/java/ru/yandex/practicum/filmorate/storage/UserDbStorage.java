@@ -80,35 +80,40 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User addFriend(Integer userId, Integer friendId) {
-        if (userId <= 0 || friendId <= 0) {
-            throw new NotFoundException("Пользователя нет в базе.");
-        }
+        User user = getUser(userId);
+        checkUserExistence(friendId);
         String sqlQuery = "INSERT INTO friendship (user_id, friend_id) VALUES(?, ?)";
         jdbcTemplate.update(sqlQuery, userId, friendId);
-        return getUser(userId);
+        return user;
     }
 
     @Override
     public User deleteFriend(Integer userId, Integer friendId) {
+        User user = getUser(userId);
+        checkUserExistence(friendId);
         String sqlQuery = "DELETE FROM friendship WHERE user_id = ? AND friend_id = ?";
         if (jdbcTemplate.update(sqlQuery, userId, friendId) > 0) {
-            return getUser(userId);
+            return user;
         } else {
-            throw new NotFoundException(String.format("Пользователя с ID:%d нет в базе.", userId));
+            throw new NotFoundException(String.format("Пользователи с ID:%d и ID:%d не являются друзьями.",
+                    userId, friendId));
         }
     }
 
     @Override
     public List<User> getFriends(Integer userId) {
+        checkUserExistence(userId);
         String sqlQuery = "SELECT * FROM users WHERE user_id IN(SELECT friend_id FROM friendship WHERE user_id = ?)";
         return jdbcTemplate.query(sqlQuery, this::mapRowToUser, userId);
     }
 
     @Override
     public List<User> getCommonFriends(Integer userId, Integer otherUserId) {
+        checkUserExistence(userId);
+        checkUserExistence(otherUserId);
         String sqlQuery = "SELECT * FROM users WHERE user_id IN(" +
-                "SELECT friend_id FROM friendship WHERE user_id = ?) AND user_id IN(" +
-                "SELECT friend_id FROM friendship WHERE user_id = ?)";
+                "SELECT friend_id FROM friendship WHERE user_id = ?) " +
+                "AND user_id IN(SELECT friend_id FROM friendship WHERE user_id = ?)";
         return jdbcTemplate.query(sqlQuery, this::mapRowToUser, userId, otherUserId);
     }
 
@@ -136,6 +141,13 @@ public class UserDbStorage implements UserStorage {
     private void checkUserName(User user) {
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
+        }
+    }
+
+    public void checkUserExistence(Integer userId) {
+        String sqlQueryExCheck = "SELECT user_id FROM users WHERE user_id = ?";
+        if (jdbcTemplate.queryForList(sqlQueryExCheck, Integer.class, userId).size() == 0) {
+            throw new NotFoundException(String.format("Пользователя с ID:%d нет в базе.", userId));
         }
     }
 }
