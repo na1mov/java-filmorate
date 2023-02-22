@@ -2,15 +2,11 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,44 +34,14 @@ public class FilmService {
     }
 
     public Film addLike(Integer filmId, Integer userId) {
-        Film film = filmStorage.getFilm(filmId);
-        if (film.getLikes() == null) {
-            film.setLikes(new HashSet<>());
-        }
-        film.getLikes().add(userId);
-        return film;
+        return filmStorage.addLike(filmId, userId);
     }
 
     public Film removeLike(Integer filmId, Integer userId) {
-        Film film = filmStorage.getFilm(filmId);
-        if (film.getLikes() == null) {
-            throw new ValidationException(String.format("У фильма с ID:%d нет лайков", filmId));
-        }
-        film.getLikes().remove(userId);
-        return film;
+        return filmStorage.removeLike(filmId, userId);
     }
 
     public List<Film> getPopularFilms(Integer count) {
-        Collection<Film> films = filmStorage.getFilms();
-        if (films == null || films.isEmpty()) {
-            return new ArrayList<>();
-        }
-        return filmStorage.getFilms().stream()
-                .sorted(this::compare)
-                .limit(count)
-                .collect(Collectors.toList());
-    }
-
-    private int compare(Film f0, Film f1) {
-        if (f0.getLikes() == null || f0.getLikes().isEmpty()) {
-            if (f1.getLikes() == null || f1.getLikes().isEmpty()) {
-                return 0;
-            }
-            return 1;
-        }
-        if (f1.getLikes() == null || f1.getLikes().isEmpty()) {
-            return -1;
-        }
-        return f1.getLikes().size() - f0.getLikes().size();
+        return filmStorage.getPopularFilms(count);
     }
 }
