@@ -19,10 +19,6 @@ import java.util.*;
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
 
-    private final UserStorage userStorage;
-    private final MpaRatingDbStorage mpaRatingDbStorage;
-    private final GenreDbStorage genreDbStorage;
-
     @Override
     public Film create(Film film) {
         SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
@@ -30,7 +26,7 @@ public class FilmDbStorage implements FilmStorage {
                 .usingGeneratedKeyColumns("film_id");
 
         film.setId(simpleJdbcInsert.executeAndReturnKey(filmToMap(film)).intValue());
-        return genreDbStorage.addFilmGenres(film);
+        return film;
     }
 
     @Override
@@ -45,7 +41,7 @@ public class FilmDbStorage implements FilmStorage {
                 , film.getMpa().getId()
                 , film.getId());
         if (updateResult > 0) {
-            return genreDbStorage.updateFilmGenres(film);
+            return film;
         } else {
             throw new NotFoundException(String.format("Фильма с ID:%d нет в базе.", film.getId()));
         }
@@ -68,24 +64,23 @@ public class FilmDbStorage implements FilmStorage {
                 "LEFT JOIN rating_mpa AS rm ON f.rating_mpa_id = rm.rating_mpa_id " +
                 "WHERE f.film_id = ?";
         try {
-            return genreDbStorage.getFilmGenres(jdbcTemplate.queryForObject(sqlQuery, this::mapRowToFilm, filmId));
+            return jdbcTemplate.queryForObject(sqlQuery, this::mapRowToFilm, filmId);
         } catch (Exception e) {
             throw new NotFoundException(String.format("Фильма с ID:%d нет в базе.", filmId));
         }
     }
 
     @Override
-    public Collection<Film> getFilms() {
+    public List<Film> getFilms() {
         String sqlQuery = "SELECT f.*, rm.name AS rm_name " +
                 "FROM film AS f " +
                 "LEFT JOIN rating_mpa AS rm ON f.rating_mpa_id = rm.rating_mpa_id";
-        return genreDbStorage.getFilmsGenres(jdbcTemplate.query(sqlQuery, this::mapRowToFilm));
+        return jdbcTemplate.query(sqlQuery, this::mapRowToFilm);
     }
 
     @Override
     public Film addLike(Integer filmId, Integer userId) {
         Film film = getFilm(filmId);
-        userStorage.getUser(userId);
         String sqlQuery = "INSERT INTO film_like (film_id, user_id) VALUES(?, ?)";
         jdbcTemplate.update(sqlQuery, filmId, userId);
         return film;
@@ -94,7 +89,6 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Film removeLike(Integer filmId, Integer userId) {
         Film film = getFilm(filmId);
-        userStorage.getUser(userId);
         String sqlQuery = "DELETE FROM film_like WHERE film_id = ? AND user_id = ?";
         if (jdbcTemplate.update(sqlQuery, filmId, userId) > 0) {
             return film;
@@ -115,7 +109,7 @@ public class FilmDbStorage implements FilmStorage {
                 "LIMIT ?";
         List<Film> result = jdbcTemplate.query(sqlQuery, this::mapRowToFilm, count);
         if (result.size() != 0) {
-            return genreDbStorage.getFilmsGenres(result);
+            return result;
         } else {
             return new ArrayList<>();
         }

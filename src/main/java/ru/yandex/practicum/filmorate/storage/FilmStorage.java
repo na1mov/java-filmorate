@@ -14,7 +14,7 @@ public interface FilmStorage {
 
     Film getFilm(Integer filmId);
 
-    Collection<Film> getFilms();
+    List<Film> getFilms();
 
     Film addLike(Integer filmId, Integer userId);
 
