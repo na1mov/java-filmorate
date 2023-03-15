@@ -78,6 +78,11 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<Film> getDirectorFilms(Integer directorId, String sortBy) {
+        return null;
+    }
+
     private int compare(Film f0, Film f1) {
         if (f0.getLikes() == null || f0.getLikes().isEmpty()) {
             if (f1.getLikes() == null || f1.getLikes().isEmpty()) {

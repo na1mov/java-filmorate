@@ -73,6 +73,7 @@ public class GenreDbStorage {
 
     public Film addFilmGenres(Film film) {
         if (film.getGenres() == null) {
+            film.setGenres(new HashSet<>());
             return film;
         }
 
