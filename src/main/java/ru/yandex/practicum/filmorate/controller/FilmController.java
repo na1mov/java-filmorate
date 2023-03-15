@@ -8,7 +8,6 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import javax.validation.Valid;
-import javax.validation.ValidationException;
 import java.util.Collection;
 import java.util.List;
 
@@ -67,5 +66,13 @@ public class FilmController {
             throw new IncorrectParameterException("count");
         }
         return filmService.getPopularFilms(count);
+    }
+
+    @GetMapping("/director/{directorId}")
+    public List<Film> getDirectorFilms(@PathVariable("directorId") Integer directorId,
+                                       @RequestParam(defaultValue = "name", required = false) String sortBy) {
+        log.debug(String.format("Получен GET запрос к эндпоинту films/director на получение " +
+                "всех фильмов режиссера с ID:%d.", directorId));
+        return filmService.getDirectorFilms(directorId, sortBy);
     }
 }

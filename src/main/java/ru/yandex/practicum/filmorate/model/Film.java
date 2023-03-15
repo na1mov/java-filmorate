@@ -9,6 +9,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -27,4 +28,5 @@ public class Film {
     private Set<Integer> likes;
     private MpaRating mpa;
     private Set<Genre> genres;
+    private List<Director> directors;
 }

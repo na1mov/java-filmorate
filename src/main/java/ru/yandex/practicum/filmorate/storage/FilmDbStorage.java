@@ -74,7 +74,7 @@ public class FilmDbStorage implements FilmStorage {
     public List<Film> getFilms() {
         String sqlQuery = "SELECT f.*, rm.name AS rm_name " +
                 "FROM film AS f " +
-                "LEFT JOIN rating_mpa AS rm ON f.rating_mpa_id = rm.rating_mpa_id";
+                "LEFT JOIN rating_mpa AS rm ON f.rating_mpa_id = rm.rating_mpa_id ";
         return jdbcTemplate.query(sqlQuery, this::mapRowToFilm);
     }
 
@@ -125,6 +125,36 @@ public class FilmDbStorage implements FilmStorage {
         }
     }
 
+    public List<Film> getDirectorFilms(Integer directorId, String sortBy) {
+        String sort;
+        switch (sortBy) {
+            case "year":
+                sort = "ORDER BY f.release_date, f.name";
+                break;
+            case "likes":
+                sort = "ORDER BY like_count DESC, f.name";
+                break;
+            default:
+                sort = "ORDER BY f.name";
+        }
+
+        String sqlQuery = "SELECT f.*, rm.name AS rm_name, COUNT(fl.film_id) AS like_count " +
+                "FROM film AS f " +
+                "LEFT JOIN rating_mpa AS rm ON f.rating_mpa_id = rm.rating_mpa_id " +
+                "LEFT JOIN film_like AS fl ON f.film_id = fl.film_id " +
+                "WHERE f.film_id IN(SELECT film_id FROM film_director WHERE director_id = ?)" +
+                "GROUP BY f.film_id " +
+                sort;
+
+        List<Film> result = jdbcTemplate.query(sqlQuery, this::mapRowToFilm, directorId);
+
+        if (result.size() != 0) {
+            return result;
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
     private Map<String, Object> filmToMap(Film film) {
         Map<String, Object> values = new HashMap<>();
         values.put("name", film.getName());
@@ -147,6 +177,7 @@ public class FilmDbStorage implements FilmStorage {
                 .id(resultSet.getInt("rating_mpa_id"))
                 .name(resultSet.getString("rm_name"))
                 .build());
+        film.setDirectors(new ArrayList<>());
         film.setGenres(new HashSet<>());
         film.setLikes(new HashSet<>(getFilmLikes(film.getId())));
         return film;

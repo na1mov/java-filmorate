@@ -10,11 +10,7 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Component
 @Primary
@@ -104,7 +100,23 @@ public class UserDbStorage implements UserStorage {
     public List<User> getFriends(Integer userId) {
         checkUserExistence(userId);
         String sqlQuery = "SELECT * FROM users WHERE user_id IN(SELECT friend_id FROM friendship WHERE user_id = ?)";
-        return jdbcTemplate.query(sqlQuery, this::mapRowToUser, userId);
+        List<User> result = jdbcTemplate.query(sqlQuery, this::mapRowToUser, userId);
+        if (result.size() != 0) {
+            return result;
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    public Set<Integer> getFriendsIds(Integer userId) {
+        checkUserExistence(userId);
+        String sqlQuery = "SELECT friend_id FROM friendship WHERE user_id = ?";
+        List<Integer> result = jdbcTemplate.queryForList(sqlQuery, Integer.class, userId);
+        if (result.size() != 0) {
+            return new HashSet<>(result);
+        } else {
+            return new HashSet<>();
+        }
     }
 
     @Override
@@ -134,7 +146,7 @@ public class UserDbStorage implements UserStorage {
                 .name(resultSet.getString("name"))
                 .birthday(resultSet.getDate("birthday").toLocalDate())
                 .build();
-        user.setFriends(getFriends(user.getId()).stream().map(User::getId).collect(Collectors.toSet()));
+        user.setFriends(getFriendsIds(user.getId()));
         return user;
     }
 
